@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #f5f4ee;
+  --color-card: #ffffff;
+  --color-ink: #1d2a24;
+  --color-muted: #64736a;
+  --color-line: #e3e7df;
+  --color-primary: #1f6f5c;
+  --color-primary-dark: #175747;
+  --color-primary-soft: #e6f2ec;
+  --color-accent: #c0863c;
+  --color-accent-soft: #fbf1e3;
+  --color-warn: #a35a12;
+  --color-warn-soft: #fdf3e4;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdeceb;
+  --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+    ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  border-color: var(--color-line);
+}
+
+::selection {
+  background: #cfe8dd;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.01em;
+}
+
+summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.35s ease-out both;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

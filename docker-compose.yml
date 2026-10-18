@@ -1,0 +1,79 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: health
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-health}
+      POSTGRES_DB: health_compass
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U health -d health_compass"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "5432:5432"
+
+  app:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://health:${POSTGRES_PASSWORD:-health}@db:5432/health_compass
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-hash}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-v4}
+      REPORTS_PER_DAY: ${REPORTS_PER_DAY:-2}
+    ports:
+      - "3000:3000"
+
+  # 一次性任务：执行数据库迁移与知识库入库
+  # docker compose run --rm setup
+  setup:
+    build:
+      context: .
+      target: builder
+    profiles: ["tools"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://health:${POSTGRES_PASSWORD:-health}@db:5432/health_compass
+      AUTH_SECRET: ${AUTH_SECRET:-setup-only}
+      AI_PROVIDER: mock
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-hash}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+    command: sh -c "npm run db:migrate && npm run kb:ingest"
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["proxy"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:
